@@ -273,9 +273,6 @@ class OffsetOverlay:
 
     def _draw_reset_button(self, calc: OffsetCalculator) -> None:
         imgui.spacing()
-        imgui.push_style_color(imgui.Col.TEXT, _rgba(255, 255, 255, 120))
-        imgui.text("Data")
-        imgui.pop_style_color()
 
         imgui.push_style_color(imgui.Col.BUTTON, _rgba(255, 255, 255, 20))
         imgui.push_style_color(imgui.Col.BUTTON_HOVERED, _rgba(255, 100, 100, 60))

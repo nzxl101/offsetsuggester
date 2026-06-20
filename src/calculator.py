@@ -125,7 +125,6 @@ class OffsetCalculator:
 
         if len(self.hit_errors) <= 50:
             self.hit_errors = []
-            self.last_map_offset = 0
             self._show_warning("Not enough hits!")
             return
 
