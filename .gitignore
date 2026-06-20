@@ -24,3 +24,6 @@ imgui.ini
 *~
 .DS_Store
 Thumbs.db
+
+# Clanker
+.opencode/

@@ -10,7 +10,7 @@ class Settings:
     current_offset_enable = True
     suggested_offset_enable = True
     suggested_offset_color_enable = True
-    reset_suggestion_on_universal_offset_change = True
+    reset_suggestion_on_universal_offset_change = False
     last_map_offset_enable = True
     realtime_offset_calculation = False
     warning_text_display_time = 2000

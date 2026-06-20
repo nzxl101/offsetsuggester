@@ -98,6 +98,7 @@ class MemoryReader:
         self._data = GameData()
         self._addrs: dict[str, int] = {}
         self._config_offset_pos: Optional[int] = None
+        self._last_known_offset: Optional[int] = None
 
     def start(self) -> None:
         self._running = True
@@ -130,6 +131,7 @@ class MemoryReader:
                 self._pm = pymem.Pymem(self.PROCESS_NAME)
                 self._scan_patterns()
                 self._config_offset_pos = None
+                self._last_known_offset = None
                 if self._addrs:
                     print(f"  [reader] Attached, found {len(self._addrs)} patterns")
                     return True
@@ -232,9 +234,9 @@ class MemoryReader:
             universal_offset = 0
             if config_addr:
                 try:
-                    static_ptr = _read_i32(pm, config_addr)  # displacement from instruction = static address
+                    static_ptr = _read_i32(pm, config_addr)
                     if static_ptr:
-                        config_obj = _read_i32(pm, static_ptr)  # dereference to get the Dictionary object
+                        config_obj = _read_i32(pm, static_ptr)
                         if config_obj:
                             if self._config_offset_pos is None:
                                 positions = self._read_config_offsets(config_obj)
@@ -246,8 +248,12 @@ class MemoryReader:
                                 )
                                 if val is not None:
                                     universal_offset = int(val)
+                                    self._last_known_offset = universal_offset
                 except Exception:
                     pass
+
+            if universal_offset == 0 and self._last_known_offset is not None:
+                universal_offset = self._last_known_offset
 
             hit_errors: list[int] = []
             if rulesets_addr and base_addr:
