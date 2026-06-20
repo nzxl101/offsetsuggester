@@ -1,0 +1,43 @@
+name: build
+
+on:
+    push:
+        tags: ["v*"]
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+
+            - name: Install dependencies
+              run: |
+                  pip install -r src/requirements.txt
+                  pip install pyinstaller
+
+            - name: Build executable
+              shell: pwsh
+              run: |
+                  $glfw = python -c "import glfw,os; print(os.path.dirname(glfw.__file__))"
+                  python -m PyInstaller --onefile --noconsole --name "OffsetSuggester" `
+                    --copy-metadata slimgui `
+                    --add-binary "$glfw\glfw3.dll;glfw" `
+                    --add-binary "$glfw\msvcr120.dll;glfw" `
+                    src/main.py
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: OffsetSuggester
+                  path: dist/OffsetSuggester.exe
+
+            - name: Release
+              if: startsWith(github.ref, 'refs/tags/')
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: dist/OffsetSuggester.exe
