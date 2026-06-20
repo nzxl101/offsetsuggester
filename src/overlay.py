@@ -201,6 +201,7 @@ class OffsetOverlay:
         self._draw_suggested(calc)
         imgui.separator()
         self._draw_stats(calc)
+        self._draw_reset_button(calc)
         self._draw_warning(calc)
 
         imgui.pop_style_var()
@@ -269,6 +270,20 @@ class OffsetOverlay:
         imgui.pop_style_color()
 
         imgui.end_group()
+
+    def _draw_reset_button(self, calc: OffsetCalculator) -> None:
+        imgui.spacing()
+        imgui.push_style_color(imgui.Col.TEXT, _rgba(255, 255, 255, 120))
+        imgui.text("Data")
+        imgui.pop_style_color()
+
+        imgui.push_style_color(imgui.Col.BUTTON, _rgba(255, 255, 255, 20))
+        imgui.push_style_color(imgui.Col.BUTTON_HOVERED, _rgba(255, 100, 100, 60))
+        imgui.push_style_color(imgui.Col.BUTTON_ACTIVE, _rgba(255, 100, 100, 40))
+        imgui.push_style_color(imgui.Col.TEXT, _rgba(255, 180, 180, 200))
+        if imgui.button("Reset Data"):
+            calc.clear_data()
+        imgui.pop_style_color(4)
 
     def _draw_warning(self, calc: OffsetCalculator) -> None:
         opacity = calc.get_warning_opacity()
