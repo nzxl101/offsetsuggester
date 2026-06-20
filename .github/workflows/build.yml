@@ -5,6 +5,9 @@ on:
         tags: ["v*"]
     workflow_dispatch:
 
+permissions:
+    contents: write
+
 jobs:
     build:
         runs-on: windows-latest
@@ -20,15 +23,24 @@ jobs:
                   pip install -r src/requirements.txt
                   pip install pyinstaller
 
+            - name: Gather glfw DLLs
+              shell: pwsh
+              run: |
+                  $src = python -c "import glfw,os; print(os.path.dirname(glfw.__file__))"
+                  foreach ($f in @('glfw3.dll', 'msvcr120.dll')) {
+                      $p = Join-Path $src $f
+                      if (Test-Path $p) { Copy-Item $p . }
+                  }
+
             - name: Build executable
               shell: pwsh
               run: |
-                  $glfw = python -c "import glfw,os; print(os.path.dirname(glfw.__file__))"
-                  python -m PyInstaller --onefile --noconsole --name "OffsetSuggester" `
-                    --copy-metadata slimgui `
-                    --add-binary "$glfw\glfw3.dll;glfw" `
-                    --add-binary "$glfw\msvcr120.dll;glfw" `
-                    src/main.py
+                  $root = Get-Location
+                  python -m PyInstaller --onefile --noconsole --noupx --name "OffsetSuggester" `
+                      --copy-metadata slimgui `
+                      --add-binary "$(Join-Path $root glfw3.dll);glfw" `
+                      --add-binary "$(Join-Path $root msvcr120.dll);glfw" `
+                      src/main.py
 
             - name: Upload artifact
               uses: actions/upload-artifact@v4

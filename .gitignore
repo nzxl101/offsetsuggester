@@ -9,6 +9,8 @@ __pycache__/
 dist/
 build/
 *.spec
+glfw3.dll
+msvcr120.dll
 
 # User config
 config.json
