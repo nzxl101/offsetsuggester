@@ -16,7 +16,6 @@ WINDOW_HEIGHT = 180
 RESIZE_GRAB_SIZE = 16
 
 WS_EX_TOPMOST = 0x8
-WS_EX_TOOLWINDOW = 0x80
 GWL_EXSTYLE = -20
 
 SetWindowLong = ctypes.windll.user32.SetWindowLongW
@@ -83,7 +82,7 @@ class OffsetOverlay:
 
         hwnd = glfw.get_win32_window(self._window)
         ex_style = GetWindowLong(hwnd, GWL_EXSTYLE)
-        ex_style |= WS_EX_TOPMOST | WS_EX_TOOLWINDOW
+        ex_style |= WS_EX_TOPMOST
         SetWindowLong(hwnd, GWL_EXSTYLE, ex_style)
         SetWindowPos(
             hwnd, HWND_TOPMOST, 0, 0, 0, 0,

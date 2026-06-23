@@ -68,6 +68,8 @@ class OffsetCalculator:
         if is_playing:
             if not self.was_playing:
                 self.hit_errors = []
+                self.was_playing = True
+                return
 
             if len(current_errors) >= len(self.hit_errors):
                 if len(current_errors) == len(self.hit_errors):
@@ -104,14 +106,12 @@ class OffsetCalculator:
         self.client_universal_offset = new_offset
         self.current_offset = new_offset
 
-        if not self.settings.reset_suggestion_on_universal_offset_change:
-            return
-
-        self.global_offsets = []
-        self.suggested_offset = new_offset
+        if self.settings.reset_suggestion_on_universal_offset_change:
+            self.global_offsets = []
+            self.suggested_offset = new_offset
 
         if self.settings.warning_text_display_time > 0:
-            self._show_warning("Suggested offset reset!")
+            self._show_warning(f"Universal offset updated to {new_offset} ms")
 
     def clear_data(self) -> None:
         self.global_offsets = []
@@ -134,6 +134,9 @@ class OffsetCalculator:
         self.last_map_offset = last_map_offset
 
         self._update_suggested_offset()
+
+        if self.settings.warning_text_display_time > 0:
+            self._show_warning(f"Suggested offset updated to {self.suggested_offset} ms")
 
     def _update_suggested_offset(self) -> None:
         offset = self.client_universal_offset
