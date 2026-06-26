@@ -12,7 +12,7 @@ from src.calculator import OffsetCalculator, get_offset_color
 from src.memory_reader import GameData
 
 WINDOW_WIDTH = 440
-WINDOW_HEIGHT = 180
+WINDOW_HEIGHT = 220
 RESIZE_GRAB_SIZE = 16
 
 WS_EX_TOPMOST = 0x8
@@ -224,12 +224,7 @@ class OffsetOverlay:
             color = (1.0, 1.0, 1.0, 0.25)
 
         imgui.push_style_color(imgui.Col.TEXT, color)
-        imgui.text(f"{calc.suggested_offset}")
-        imgui.pop_style_color()
-
-        imgui.same_line()
-        imgui.push_style_color(imgui.Col.TEXT, _rgba(255, 255, 255, 153))
-        imgui.text("ms")
+        imgui.text(f"{calc.suggested_offset}  ms")
         imgui.pop_style_color()
 
     def _draw_stats(self, calc: OffsetCalculator) -> None:
@@ -270,14 +265,35 @@ class OffsetOverlay:
 
         imgui.end_group()
 
-    def _draw_reset_button(self, calc: OffsetCalculator) -> None:
+        self._draw_median(calc)
+
+    def _draw_median(self, calc: OffsetCalculator) -> None:
         imgui.spacing()
+
+        label = "Running  MEDIAN  Error"
+        imgui.push_style_color(imgui.Col.TEXT, _rgba(255, 255, 255, 153))
+        imgui.text(label)
+        imgui.pop_style_color()
+
+        diff = calc.current_median
+        r, g, b = get_offset_color(diff)
+        color = (r / 255.0, g / 255.0, b / 255.0, 1.0)
+        imgui.push_style_color(imgui.Col.TEXT, color)
+        sign = "+" if diff >= 0 else ""
+        imgui.text(f"{sign}{diff}  ms")
+        imgui.pop_style_color()
+
+    def _draw_reset_button(self, calc: OffsetCalculator) -> None:
+        btn_text = "Reset Data"
+        btn_size = imgui.calc_text_size(btn_text)
+        btn_w = btn_size[0] + imgui.get_style().frame_padding[0] * 2 + 12
+        imgui.set_cursor_pos_x(self._window_width - 32 - btn_w)
 
         imgui.push_style_color(imgui.Col.BUTTON, _rgba(255, 255, 255, 20))
         imgui.push_style_color(imgui.Col.BUTTON_HOVERED, _rgba(255, 100, 100, 60))
         imgui.push_style_color(imgui.Col.BUTTON_ACTIVE, _rgba(255, 100, 100, 40))
         imgui.push_style_color(imgui.Col.TEXT, _rgba(255, 180, 180, 200))
-        if imgui.button("Reset Data"):
+        if imgui.button(btn_text):
             calc.clear_data()
         imgui.pop_style_color(4)
 

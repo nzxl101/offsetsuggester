@@ -2,7 +2,7 @@ import math
 import time
 from typing import Optional
 
-from src.memory_reader import BanchoStatus, GameData, GameState
+from src.memory_reader import GameData, GameState
 
 
 def calculate_median(values: list[int]) -> int:
@@ -46,6 +46,7 @@ class OffsetCalculator:
         self.was_playing = False
 
         self.suggested_offset: int = 0
+        self.current_median: int = 0
         self.current_offset: int = 0
         self.last_map_offset: int = 0
         self.warning_text: str = ""
@@ -58,6 +59,7 @@ class OffsetCalculator:
 
         is_playing = self._is_playing(data)
         current_errors = data.hit_errors
+        play_time = data.play_time
 
         if self.client_universal_offset is None:
             self.client_universal_offset = data.universal_offset
@@ -71,22 +73,25 @@ class OffsetCalculator:
                 self.was_playing = True
                 return
 
-            if len(current_errors) >= len(self.hit_errors):
-                if len(current_errors) == len(self.hit_errors):
-                    self.was_playing = True
-                    return
+            if play_time <= 0:
+                self.hit_errors = []
+                return
 
-                self.hit_errors = current_errors
+            if len(current_errors) > len(self.hit_errors):
+                self.hit_errors.extend(current_errors[len(self.hit_errors):])
+                self.current_median = calculate_median(self.hit_errors)
 
                 if self.settings.realtime_offset_calculation:
                     self.last_map_offset = calculate_median(self.hit_errors)
 
-                self.was_playing = True
                 return
 
-            self._on_map_finish()
-            self.hit_errors = current_errors
-            self.was_playing = True
+            if len(current_errors) < len(self.hit_errors):
+                if len(current_errors) == 0:
+                    self._on_map_finish()
+                else:
+                    self.hit_errors = current_errors
+
             return
 
         if self.was_playing and not is_playing:
@@ -98,9 +103,7 @@ class OffsetCalculator:
             self.was_playing = False
 
     def _is_playing(self, data: GameData) -> bool:
-        if data.profile_id == -1:
-            return data.status == GameState.play
-        return data.bancho_status == BanchoStatus.playing and data.profile_id != -1
+        return data.status == GameState.play
 
     def _on_universal_offset_changed(self, new_offset: int) -> None:
         self.client_universal_offset = new_offset

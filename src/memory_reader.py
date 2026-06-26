@@ -17,10 +17,6 @@ class GameState:
     play = 2
 
 
-class BanchoStatus:
-    playing = 2
-
-
 def _compile_pattern(mask: str, pattern_bytes: bytes) -> bytes:
     result = bytearray()
     for i, b in enumerate(pattern_bytes):
@@ -51,9 +47,9 @@ PATTERNS: dict[str, tuple[str, int]] = {
         ),
         6,
     ),
-    "userProfilePtr": (
-        _compile_pattern("xx????x????xxxxx", b"\xFF\x15\x00\x00\x00\x00\xA1\x00\x00\x00\x00\x8B\x48\x54\x33\xD2"),
-        7,
+    "playTimeAddr": (
+        _compile_pattern("xxxxx????x?xx", b"\x5E\x5F\x5D\xC3\xA1\x00\x00\x00\x00\x89\x00\x04"),
+        0x5,
     ),
 }
 
@@ -79,10 +75,9 @@ def _read_sharp_string(pm: pymem.Pymem, addr: int) -> str:
 @dataclass
 class GameData:
     status: int = 0
-    bancho_status: int = 0
     universal_offset: int = 0
     hit_errors: list[int] = field(default_factory=list)
-    profile_id: int = -1
+    play_time: int = 0
     connected: bool = False
 
 
@@ -205,8 +200,8 @@ class MemoryReader:
             status_ptr = addrs.get("statusPtr", 0)
             rulesets_addr = addrs.get("rulesetsAddr", 0)
             config_addr = addrs.get("configurationAddr", 0)
-            user_prof_ptr = addrs.get("userProfilePtr", 0)
             base_addr = addrs.get("baseAddr", 0)
+            play_time_addr = addrs.get("playTimeAddr", 0)
 
             status = 0
             if status_ptr:
@@ -218,20 +213,18 @@ class MemoryReader:
                 except Exception as e:
                     print(f"  [reader] status read error: {e}")
 
-            profile_id = -1
-            bancho_status = -1
-            if user_prof_ptr:
+            play_time = 0
+            if play_time_addr:
                 try:
-                    profile_base_ptr = _read_i32(pm, user_prof_ptr)
-                    if profile_base_ptr:
-                        profile_base = _read_i32(pm, profile_base_ptr)
-                        if profile_base:
-                            profile_id = _read_i32(pm, profile_base + 0x70)
-                            bancho_status = _read_i32(pm, profile_base + 0x8C)
+                    pt_ptr = _read_i32(pm, play_time_addr)
+                    if pt_ptr:
+                        play_time = _read_i32(pm, pt_ptr)
+                        if play_time < 0 or play_time > 1_000_000:
+                            play_time = 0
                 except Exception:
                     pass
 
-            universal_offset = 0
+            universal_offset = None
             if config_addr:
                 try:
                     static_ptr = _read_i32(pm, config_addr)
@@ -252,7 +245,7 @@ class MemoryReader:
                 except Exception:
                     pass
 
-            if universal_offset == 0 and self._last_known_offset is not None:
+            if universal_offset is None and self._last_known_offset is not None:
                 universal_offset = self._last_known_offset
 
             hit_errors: list[int] = []
@@ -290,10 +283,9 @@ class MemoryReader:
             with self._lock:
                 self._data = GameData(
                     status=status,
-                    bancho_status=bancho_status,
-                    universal_offset=universal_offset,
+                    universal_offset=universal_offset or 0,
                     hit_errors=hit_errors,
-                    profile_id=profile_id,
+                    play_time=play_time,
                     connected=True,
                 )
         except Exception:
